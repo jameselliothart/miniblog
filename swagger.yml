@@ -37,12 +37,18 @@ paths:
             type: array
             items:
               properties:
+                person_id:
+                  type: string
+                  description: Id of the person
                 fname:
                   type: string
+                  description: First name of the person
                 lname:
                   type: string
+                  description: Last name of the person
                 timestamp:
                   type: string
+                  description: Create/update timestamp of the person
 
     post:
       operationId: people.create
@@ -66,9 +72,23 @@ paths:
                 description: Last name of person to create
       responses:
         201:
-          description: Successfully created person in list
+          description: Successfully created person
+          schema:
+            properties:
+              person_id:
+                type: string
+                description: Id of the person
+              fname:
+                type: string
+                description: First name of the person
+              lname:
+                type: string
+                description: Last name of the person
+              timestamp:
+                type: string
+                description: Create/update timestamp of the person
 
-  /people/{lname}:
+  /people/{person_id}:
     get:
       operationId: people.read_one
       tags:
@@ -76,22 +96,29 @@ paths:
       summary: Read one person from the people list
       description: Read one person from the people list
       parameters:
-        - name: lname
+        - name: person_id
           in: path
-          description: Last name of the person to get from the list
-          type: string
+          description: Id of the person to get from the list
+          type: integer
           required: True
       responses:
         200:
           description: Successfully read person from people list operation
           schema:
+            type: object
             properties:
+              person_id:
+                type: string
+                description: Id of the person
               fname:
                 type: string
+                description: First name of the person
               lname:
                 type: string
+                description: Last name of the person
               timestamp:
                 type: string
+                description: Create/update timestamp of the person
 
     put:
       operationId: people.update
@@ -100,10 +127,10 @@ paths:
       summary: Update a person in the people list
       description: Update a person in the people list
       parameters:
-        - name: lname
+        - name: person_id
           in: path
-          description: Last name of the person to update in the list
-          type: string
+          description: Id of the person to update
+          type: integer
           required: True
         - name: person
           in: body
@@ -112,11 +139,27 @@ paths:
             properties:
               fname:
                 type: string
+                description: First name of the person to update
               lname:
                 type: string
+                description: Last name of the person to update
       responses:
         200:
-          description: Successfully updated person in people list
+          description: Successfully updated person
+          schema:
+            properties:
+              person_id:
+                type: string
+                description: Id of the person in the database
+              fname:
+                type: string
+                description: First name of the person
+              lname:
+                type: string
+                description: Last name of the person
+              timestamp:
+                type: string
+                description: Create/Update timestamp of the person record
 
     delete:
       operationId: people.delete
@@ -125,10 +168,11 @@ paths:
       summary: Delete a person from the people list
       description: Delete a person
       parameters:
-        - name: lname
+        - name: person_id
           in: path
-          type: string
+          type: integer
+          description: Id of the person to delete
           required: True
       responses:
         200:
-          description: Successfully deleted a person from people list
+          description: Successfully deleted a person

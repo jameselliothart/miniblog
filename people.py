@@ -1,55 +1,41 @@
 from datetime import datetime
 from flask import make_response, abort
+from config import db
+from models import Person, PersonSchema
 
 
 def get_timestamp():
     return datetime.now().strftime(("%Y-%m-%d %H:%M:%S"))
 
 
-# Data to serve with API
-PEOPLE = {
-    "Farrell": {
-        "fname": "Doug",
-        "lname": "Farrell",
-        "timestamp": get_timestamp()
-    },
-    "Brockman": {
-        "fname": "Kent",
-        "lname": "Brockman",
-        "timestamp": get_timestamp()
-    },
-    "Easter": {
-        "fname": "Bunny",
-        "lname": "Easter",
-        "timestamp": get_timestamp()
-    }
-}
-
-
-# Create handler to read (GET) people
 def read_all():
     """
     Responds to a request for /api/people with the complete list of people
 
     :return:    json string of list of people
     """
-    return [PEOPLE[key] for key in sorted(PEOPLE.keys())]
+    people = Person.query.order_by(Person.lname).all()
+
+    # Serialize
+    person_schema = PersonSchema(many=True)
+    return person_schema.dump(people).data
 
 
-def read_one(lname):
+def read_one(person_id):
     """
-    Responds to a request for /api/people/{lname}
+    Responds to a request for /api/people/{person_id}
     with one matching person from people
 
-    :param lname:   last name of person to find
-    :return:        person matching last name
+    :param person_id:   Id of person to find
+    :return:        person matching id
     """
-    if lname in PEOPLE:
-        person = PEOPLE.get(lname)
-    else:
-        abort(404, f"Person with last name {lname} not found")
+    person = Person.query.filter(Person.person_id == person_id).one_or_none()
 
-    return person
+    if person is not None:
+        person_schema = PersonSchema()
+        return person_schema.dump(person).data
+    else:
+        abort(404, f"Person not found for id: {person_id}")
 
 
 def create(person):
@@ -62,43 +48,63 @@ def create(person):
     lname = person.get("lname", None)
     fname = person.get("fname", None)
 
-    if lname not in PEOPLE and lname is not None:
-        PEOPLE[lname] = {
-            "lname": lname,
-            "fname": fname,
-            "timestamp": get_timestamp()
-        }
-        return make_response(f"{lname} successfully created", 201)
+    person_check = (
+        Person.query.filter(Person.fname == fname and Person.lname == lname)
+        .one_or_none()
+    )
+
+    if person_check is None:
+        schema = PersonSchema()
+        new_person = schema.load(person, session=db.session).data
+
+        db.session.add(new_person)
+        db.session.commit()
+
+        data = schema.dump(new_person).data
+        return data, 201
     else:
-        abort(406, f"Person with last name {lname} already exists")
+        abort(406, f"Person {fname} {lname} already exists")
 
 
-def update(lname, person):
+def update(person_id, person):
     """
     Updates an existing person in the people structure
 
-    :param lname:   last name of the person to update
-    :param person:  person to update
-    :return:        updated person structure
+    :param person_id:   id of the person to update
+    :param person:      person to update
+    :return:            updated person structure
     """
-    if lname in PEOPLE:
-        PEOPLE[lname]["fname"] = person.get("fname")
-        PEOPLE[lname]["timestamp"] = get_timestamp()
+    update_person = Person.query.filter(
+        Person.person_id == person_id
+    ).one_or_none()
 
-        return PEOPLE[lname]
+    if update_person is not None:
+        schema = PersonSchema()
+        update = schema.load(person, session=db.session).data
+
+        update.id = update_person.person_id
+        db.session.merge(update)
+        db.session.commit()
+
+        data = schema.dump(update_person).data
+
+        return data, 200
     else:
-        abort(404, f"Person with last name {lname} not found")
+        abort(404, f"Person not found for id: {person_id}")
 
 
-def delete(lname):
+def delete(person_id):
     """
     Deletes a person in the people structure
 
-    :param lname:   last name of the person to delete
-    :return:        200 on successful delete, 404 if not found
+    :param person_id:   id of the person to delete
+    :return:            200 on successful delete, 404 if not found
     """
-    if lname in PEOPLE:
-        del PEOPLE[lname]
-        return make_response(f"{lname} successfully deleted", 200)
+    person = Person.query.filter(Person.person_id == person_id).one_or_none()
+
+    if person is not None:
+        db.session.delete(person)
+        db.session.commit()
+        return make_response(f"Person {person_id} deleted", 200)
     else:
-        abort(404, f"Person with last name {lname} not found")
+        abort(404, f"Person not found for id: {person_id}")
