@@ -27,7 +27,7 @@ paths:
             items:
               properties:
                 person_id:
-                  type: string
+                  type: integer
                   description: Id of the person
                 fname:
                   type: string
@@ -65,7 +65,7 @@ paths:
           schema:
             properties:
               person_id:
-                type: string
+                type: integer
                 description: Id of the person
               fname:
                 type: string
@@ -138,7 +138,7 @@ paths:
           schema:
             properties:
               person_id:
-                type: string
+                type: integer
                 description: Id of the person in the database
               fname:
                 type: string
