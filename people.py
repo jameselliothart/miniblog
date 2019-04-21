@@ -82,7 +82,7 @@ def update(person_id, person):
         schema = PersonSchema()
         update = schema.load(person, session=db.session).data
 
-        update.id = update_person.person_id
+        update.person_id = update_person.person_id
         db.session.merge(update)
         db.session.commit()
 
